@@ -206,6 +206,240 @@
   .fill.ultra{ background:linear-gradient(90deg, rgba(0,255,255,1), rgba(0,160,255,1)); }
   .fill.normal{ background:linear-gradient(90deg, rgba(255,180,0,1), rgba(255,90,0,1)); }
 
+
+/* ===== GLOBAL CHAT ADD-ON (added, nothing deleted) ===== */
+#globalChat{
+  position:fixed;
+  right:12px;
+  bottom:12px;
+  z-index:120;
+  width:320px;
+  max-width:calc(100vw - 24px);
+  color:#fff;
+  background:rgba(0,0,0,.58);
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:18px;
+  backdrop-filter:blur(12px);
+  box-shadow:0 18px 60px rgba(0,0,0,.45);
+  overflow:hidden;
+  font-family:system-ui,Segoe UI,Arial;
+}
+#globalChat.minimized #chatBody{display:none}
+#chatHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:10px 12px;
+  background:rgba(255,255,255,.07);
+  border-bottom:1px solid rgba(255,255,255,.12);
+}
+#chatHead b{font-size:13px;font-weight:1000}
+#chatHead small{opacity:.75;font-size:11px}
+#chatToggle{
+  cursor:pointer;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.10);
+  color:#fff;
+  border-radius:10px;
+  padding:5px 8px;
+  font-weight:1000;
+}
+#chatMessages{
+  height:190px;
+  overflow-y:auto;
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  scrollbar-width:thin;
+}
+.chatMsg{
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:12px;
+  padding:7px 8px;
+  word-break:break-word;
+  line-height:1.25;
+}
+.chatMsg .name{
+  font-size:11px;
+  font-weight:1000;
+  opacity:.95;
+  margin-bottom:3px;
+}
+.chatMsg .txt{font-size:12px;opacity:.95}
+.chatSys{
+  opacity:.75;
+  font-size:11px;
+  text-align:center;
+  padding:4px 0;
+}
+#chatForm{
+  display:flex;
+  gap:6px;
+  padding:10px;
+  border-top:1px solid rgba(255,255,255,.12);
+}
+#chatName{
+  width:78px;
+}
+#chatInput{
+  flex:1;
+  min-width:0;
+}
+#chatName,#chatInput{
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(0,0,0,.35);
+  color:#fff;
+  border-radius:12px;
+  padding:9px 9px;
+  outline:none;
+  font-weight:800;
+}
+#chatSend{
+  border:1px solid rgba(0,229,255,.35);
+  background:linear-gradient(180deg, rgba(0,229,255,.45), rgba(0,229,255,.22));
+  color:#fff;
+  border-radius:12px;
+  padding:9px 10px;
+  font-weight:1000;
+  cursor:pointer;
+}
+#chatStatus{
+  padding:0 10px 9px;
+  opacity:.72;
+  font-size:11px;
+}
+@media (max-width: 720px){
+  #globalChat{
+    left:12px;
+    right:12px;
+    bottom:104px;
+    width:auto;
+  }
+  #chatMessages{height:150px}
+}
+
+
+/* ===== PLAYER PROFILE + FRIENDS ADD-ON (added, nothing deleted) ===== */
+#profilePanel{
+  position:fixed;
+  left:12px;
+  bottom:12px;
+  z-index:125;
+  width:340px;
+  max-width:calc(100vw - 24px);
+  color:#fff;
+  background:rgba(0,0,0,.58);
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:18px;
+  backdrop-filter:blur(12px);
+  box-shadow:0 18px 60px rgba(0,0,0,.45);
+  overflow:hidden;
+  font-family:system-ui,Segoe UI,Arial;
+}
+#profilePanel.minimized #profileBody{display:none}
+#profileHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:10px 12px;
+  background:rgba(255,255,255,.07);
+  border-bottom:1px solid rgba(255,255,255,.12);
+}
+#profileHead b{font-size:13px;font-weight:1000}
+#profileHead small{opacity:.75;font-size:11px}
+#profileToggle{
+  cursor:pointer;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.10);
+  color:#fff;
+  border-radius:10px;
+  padding:5px 8px;
+  font-weight:1000;
+}
+#profileBody{padding:10px;display:flex;flex-direction:column;gap:8px}
+.profileCard{
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:14px;
+  padding:9px;
+}
+.profileRow{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:6px}
+.profileLabel{opacity:.72;font-size:11px}
+.profileValue{font-size:12px;font-weight:1000;word-break:break-word;text-align:right}
+#profileNameInput,#friendIdInput{
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(0,0,0,.35);
+  color:#fff;
+  border-radius:12px;
+  padding:9px 9px;
+  outline:none;
+  font-weight:800;
+  min-width:0;
+}
+#profileNameInput{width:128px}
+#friendIdInput{flex:1}
+.profileBtn{
+  border:1px solid rgba(0,229,255,.35);
+  background:linear-gradient(180deg, rgba(0,229,255,.45), rgba(0,229,255,.22));
+  color:#fff;
+  border-radius:12px;
+  padding:9px 10px;
+  font-weight:1000;
+  cursor:pointer;
+}
+.profileBtn.secondary{
+  background:rgba(255,255,255,.10);
+  border-color:rgba(255,255,255,.16);
+}
+#friendsList,#requestsList{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  max-height:130px;
+  overflow-y:auto;
+}
+.friendItem{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  align-items:center;
+  background:rgba(0,0,0,.23);
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:12px;
+  padding:7px 8px;
+  font-size:12px;
+}
+.friendItem b{font-weight:1000}
+.friendItem small{opacity:.72}
+.friendActions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.friendActions button{
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.10);
+  color:#fff;
+  border-radius:9px;
+  padding:5px 7px;
+  font-weight:900;
+  cursor:pointer;
+  font-size:11px;
+}
+#profileStatus{
+  opacity:.75;
+  font-size:11px;
+  line-height:1.25;
+}
+@media (max-width:720px){
+  #profilePanel{
+    left:12px;
+    right:12px;
+    bottom:280px;
+    width:auto;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -455,8 +689,408 @@
 </div>
 
 
+
+
+<!-- ===== PLAYER PROFILE + FRIENDS ADD-ON (added, nothing deleted) ===== -->
+<div id="profilePanel">
+  <div id="profileHead">
+    <div>
+      <b>Player Profile</b>
+      <small id="profileOnline">loading...</small>
+    </div>
+    <button id="profileToggle" type="button">−</button>
+  </div>
+  <div id="profileBody">
+    <div class="profileCard">
+      <div class="profileRow">
+        <span class="profileLabel">Your Name</span>
+        <span>
+          <input id="profileNameInput" maxlength="14" />
+          <button id="profileSaveName" class="profileBtn secondary" type="button">Save</button>
+        </span>
+      </div>
+      <div class="profileRow">
+        <span class="profileLabel">Your Player ID</span>
+        <span class="profileValue" id="playerIdText">---</span>
+      </div>
+      <div class="profileRow">
+        <span class="profileLabel">Public Profile</span>
+        <span class="profileValue" id="publicProfileText">Visible</span>
+      </div>
+      <div class="profileRow">
+        <button id="copyPlayerId" class="profileBtn secondary" type="button">Copy ID</button>
+        <button id="refreshProfile" class="profileBtn secondary" type="button">Refresh</button>
+      </div>
+    </div>
+
+    <div class="profileCard">
+      <div class="profileLabel">Add Friend by Player ID</div>
+      <div class="profileRow">
+        <input id="friendIdInput" maxlength="18" placeholder="Example: RC-AB12CD34" />
+        <button id="addFriendBtn" class="profileBtn" type="button">Add</button>
+      </div>
+    </div>
+
+    <div class="profileCard">
+      <div class="profileLabel">Friend Requests</div>
+      <div id="requestsList"><div class="friendItem"><small>No requests yet.</small></div></div>
+    </div>
+
+    <div class="profileCard">
+      <div class="profileLabel">Friends</div>
+      <div id="friendsList"><div class="friendItem"><small>No friends yet.</small></div></div>
+    </div>
+
+    <div id="profileStatus">Each browser gets a random permanent ID automatically.</div>
+  </div>
+</div>
+
+<!-- ===== GLOBAL CHAT ADD-ON (added, nothing deleted) ===== -->
+<div id="globalChat">
+  <div id="chatHead">
+    <div>
+      <b>Global Chat</b>
+      <small id="chatOnline">connecting...</small>
+    </div>
+    <button id="chatToggle" type="button">−</button>
+  </div>
+  <div id="chatBody">
+    <div id="chatMessages">
+      <div class="chatSys">Global chat loads when the server is online.</div>
+    </div>
+    <form id="chatForm">
+      <input id="chatName" maxlength="14" placeholder="Name" autocomplete="nickname" />
+      <input id="chatInput" maxlength="140" placeholder="Say something..." autocomplete="off" />
+      <button id="chatSend" type="submit">Send</button>
+    </form>
+    <div id="chatStatus">Chat is public. Be respectful.</div>
+  </div>
+</div>
+
 <script type="module">
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js";
+
+/* ===== GLOBAL CHAT ADD-ON (added, nothing deleted) ===== */
+const GLOBAL_CHAT = {
+  socket:null,
+  connected:false,
+  reconnectTimer:null
+};
+
+const chatBox = document.getElementById("globalChat");
+const chatToggle = document.getElementById("chatToggle");
+const chatMessages = document.getElementById("chatMessages");
+const chatForm = document.getElementById("chatForm");
+const chatInput = document.getElementById("chatInput");
+const chatName = document.getElementById("chatName");
+const chatOnline = document.getElementById("chatOnline");
+const chatStatus = document.getElementById("chatStatus");
+
+function chatEscape(s){
+  return String(s || "").replace(/[&<>"']/g, ch => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[ch]));
+}
+function chatAddSystem(text){
+  if(!chatMessages) return;
+  const d=document.createElement("div");
+  d.className="chatSys";
+  d.textContent=text;
+  chatMessages.appendChild(d);
+  chatMessages.scrollTop=chatMessages.scrollHeight;
+}
+function chatAddMessage(name,text){
+  if(!chatMessages) return;
+  const d=document.createElement("div");
+  d.className="chatMsg";
+  d.innerHTML = `<div class="name">${chatEscape(name)}</div><div class="txt">${chatEscape(text)}</div>`;
+  chatMessages.appendChild(d);
+  while(chatMessages.children.length > 60) chatMessages.removeChild(chatMessages.firstChild);
+  chatMessages.scrollTop=chatMessages.scrollHeight;
+}
+function chatUrl(){
+  const protocol = location.protocol === "https:" ? "wss://" : "ws://";
+  return protocol + location.host;
+}
+function connectGlobalChat(){
+  if(!("WebSocket" in window)) {
+    chatAddSystem("Your browser does not support WebSocket chat.");
+    return;
+  }
+  try{
+    if(GLOBAL_CHAT.socket) GLOBAL_CHAT.socket.close();
+    const ws = new WebSocket(chatUrl());
+    GLOBAL_CHAT.socket = ws;
+    if(chatOnline) chatOnline.textContent = "connecting...";
+    if(chatStatus) chatStatus.textContent = "Connecting to global chat...";
+
+    ws.addEventListener("open", ()=>{
+      GLOBAL_CHAT.connected = true;
+      if(chatOnline) chatOnline.textContent = "online";
+      if(chatStatus) chatStatus.textContent = "Connected to global chat.";
+      chatAddSystem("Connected.");
+    });
+
+    ws.addEventListener("message", (ev)=>{
+      let msg;
+      try{ msg = JSON.parse(ev.data); }catch{ return; }
+      if(msg.t === "chat_history" && Array.isArray(msg.messages)){
+        chatMessages.innerHTML = "";
+        for(const m of msg.messages) chatAddMessage(m.name, m.text);
+        if(!msg.messages.length) chatAddSystem("No messages yet. Say hi.");
+      }
+      if(msg.t === "chat"){
+        chatAddMessage(msg.name, msg.text);
+      }
+      if(msg.t === "chat_online"){
+        if(chatOnline) chatOnline.textContent = `${msg.count || 1} online`;
+      }
+      if(msg.t === "chat_error"){
+        chatAddSystem(msg.message || "Message blocked.");
+      }
+
+      if(msg.t === "profile_ok"){
+        if(profileOnline) profileOnline.textContent = `${msg.online || 1} online`;
+        setProfileStatus("Public profile online.");
+      }
+      if(msg.t === "friends_data"){
+        renderFriends(msg);
+        renderRequests(msg);
+        if(profileOnline) profileOnline.textContent = `${msg.online || 1} online`;
+      }
+      if(msg.t === "friend_notice"){
+        setProfileStatus(msg.message || "Friend update.");
+        refreshFriends();
+      }
+
+    });
+
+    ws.addEventListener("close", ()=>{
+      GLOBAL_CHAT.connected = false;
+      if(chatOnline) chatOnline.textContent = "offline";
+      if(chatStatus) chatStatus.textContent = "Chat disconnected. Reconnecting...";
+      clearTimeout(GLOBAL_CHAT.reconnectTimer);
+      GLOBAL_CHAT.reconnectTimer = setTimeout(connectGlobalChat, 1800);
+    });
+
+    ws.addEventListener("error", ()=>{
+      if(chatStatus) chatStatus.textContent = "Chat connection error.";
+    });
+  }catch(e){
+    chatAddSystem("Could not connect to chat.");
+  }
+}
+if(chatToggle){
+  chatToggle.addEventListener("click", ()=>{
+    chatBox.classList.toggle("minimized");
+    chatToggle.textContent = chatBox.classList.contains("minimized") ? "+" : "−";
+  });
+}
+if(chatName){
+  const savedName = localStorage.getItem("MINI_RACER_CHAT_NAME") || ("Racer" + Math.floor(Math.random()*999));
+  chatName.value = savedName;
+  chatName.addEventListener("change", ()=>{
+    localStorage.setItem("MINI_RACER_CHAT_NAME", chatName.value.trim().slice(0,14) || "Racer");
+  });
+}
+if(chatForm){
+  chatForm.addEventListener("submit", (e)=>{
+    e.preventDefault();
+    const name = (chatName.value || "Racer").trim().slice(0,14);
+    const text = (chatInput.value || "").trim().slice(0,140);
+    if(!text) return;
+    localStorage.setItem("MINI_RACER_CHAT_NAME", name);
+    if(!GLOBAL_CHAT.socket || GLOBAL_CHAT.socket.readyState !== WebSocket.OPEN){
+      chatAddSystem("Chat is offline. Try again in a second.");
+      return;
+    }
+    GLOBAL_CHAT.socket.send(JSON.stringify({t:"chat", name, text}));
+    chatInput.value="";
+  });
+}
+connectGlobalChat();
+
+/* ===== PLAYER PROFILE + FRIENDS ADD-ON (added, nothing deleted) ===== */
+const PLAYER_PROFILE_KEY = "MINI_RACER_PLAYER_PROFILE_V1";
+function makePlayerId(){
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let s = "RC-";
+  for(let i=0;i<8;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+function loadPlayerProfile(){
+  try{
+    const old = JSON.parse(localStorage.getItem(PLAYER_PROFILE_KEY) || "null");
+    if(old && old.id) return old;
+  }catch{}
+  const p = {
+    id: makePlayerId(),
+    name: "Racer" + Math.floor(Math.random()*9999),
+    createdAt: Date.now(),
+    public: true,
+    friends: []
+  };
+  localStorage.setItem(PLAYER_PROFILE_KEY, JSON.stringify(p));
+  return p;
+}
+let PLAYER_PROFILE = loadPlayerProfile();
+
+const profilePanel = document.getElementById("profilePanel");
+const profileToggle = document.getElementById("profileToggle");
+const profileOnline = document.getElementById("profileOnline");
+const playerIdText = document.getElementById("playerIdText");
+const profileNameInput = document.getElementById("profileNameInput");
+const profileSaveName = document.getElementById("profileSaveName");
+const copyPlayerId = document.getElementById("copyPlayerId");
+const refreshProfile = document.getElementById("refreshProfile");
+const friendIdInput = document.getElementById("friendIdInput");
+const addFriendBtn = document.getElementById("addFriendBtn");
+const friendsList = document.getElementById("friendsList");
+const requestsList = document.getElementById("requestsList");
+const profileStatus = document.getElementById("profileStatus");
+
+const FRIENDS_NET = { ws:null, online:false };
+
+function savePlayerProfile(){
+  localStorage.setItem(PLAYER_PROFILE_KEY, JSON.stringify(PLAYER_PROFILE));
+}
+function setProfileStatus(t){
+  if(profileStatus) profileStatus.textContent = t;
+}
+function renderLocalProfile(){
+  if(playerIdText) playerIdText.textContent = PLAYER_PROFILE.id;
+  if(profileNameInput) profileNameInput.value = PLAYER_PROFILE.name || "Racer";
+}
+function safeWsUrl(){
+  const protocol = location.protocol === "https:" ? "wss://" : "ws://";
+  return protocol + location.host;
+}
+function sendProfileMsg(obj){
+  const ws = FRIENDS_NET.ws || (typeof GLOBAL_CHAT !== "undefined" ? GLOBAL_CHAT.socket : null);
+  if(ws && ws.readyState === WebSocket.OPEN){
+    ws.send(JSON.stringify(obj));
+    return true;
+  }
+  setProfileStatus("Offline. Wait for server connection.");
+  return false;
+}
+function registerProfile(){
+  sendProfileMsg({
+    t:"profile_register",
+    id:PLAYER_PROFILE.id,
+    name:PLAYER_PROFILE.name,
+    public:true,
+    friends:PLAYER_PROFILE.friends || []
+  });
+}
+function renderFriends(data){
+  if(!friendsList) return;
+  const friends = data?.friends || [];
+  PLAYER_PROFILE.friends = friends.map(f => f.id || f).filter(Boolean);
+  savePlayerProfile();
+  friendsList.innerHTML = "";
+  if(!friends.length){
+    friendsList.innerHTML = `<div class="friendItem"><small>No friends yet.</small></div>`;
+    return;
+  }
+  for(const f of friends){
+    const row = document.createElement("div");
+    row.className = "friendItem";
+    row.innerHTML = `
+      <div><b>${chatEscape ? chatEscape(f.name || "Racer") : (f.name || "Racer")}</b><br><small>${f.id} • ${f.online ? "online" : "offline"}</small></div>
+      <div class="friendActions"><button data-remove="${f.id}">Remove</button></div>
+    `;
+    friendsList.appendChild(row);
+  }
+  friendsList.querySelectorAll("[data-remove]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      sendProfileMsg({t:"friend_remove", from:PLAYER_PROFILE.id, target:btn.getAttribute("data-remove")});
+    });
+  });
+}
+function renderRequests(data){
+  if(!requestsList) return;
+  const reqs = data?.requests || [];
+  requestsList.innerHTML = "";
+  if(!reqs.length){
+    requestsList.innerHTML = `<div class="friendItem"><small>No requests yet.</small></div>`;
+    return;
+  }
+  for(const r of reqs){
+    const row = document.createElement("div");
+    row.className = "friendItem";
+    row.innerHTML = `
+      <div><b>${chatEscape ? chatEscape(r.name || "Racer") : (r.name || "Racer")}</b><br><small>${r.id}</small></div>
+      <div class="friendActions">
+        <button data-accept="${r.id}">Accept</button>
+        <button data-decline="${r.id}">Decline</button>
+      </div>
+    `;
+    requestsList.appendChild(row);
+  }
+  requestsList.querySelectorAll("[data-accept]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      sendProfileMsg({t:"friend_accept", from:PLAYER_PROFILE.id, target:btn.getAttribute("data-accept")});
+    });
+  });
+  requestsList.querySelectorAll("[data-decline]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      sendProfileMsg({t:"friend_decline", from:PLAYER_PROFILE.id, target:btn.getAttribute("data-decline")});
+    });
+  });
+}
+function refreshFriends(){
+  sendProfileMsg({t:"friends_get", id:PLAYER_PROFILE.id});
+}
+function initProfileFriendSystem(){
+  renderLocalProfile();
+  setTimeout(registerProfile, 700);
+  setTimeout(refreshFriends, 1000);
+  setInterval(()=>{ registerProfile(); refreshFriends(); }, 8000);
+}
+if(profileToggle){
+  profileToggle.addEventListener("click", ()=>{
+    profilePanel.classList.toggle("minimized");
+    profileToggle.textContent = profilePanel.classList.contains("minimized") ? "+" : "−";
+  });
+}
+if(profileSaveName){
+  profileSaveName.addEventListener("click", ()=>{
+    PLAYER_PROFILE.name = (profileNameInput.value || "Racer").trim().slice(0,14) || "Racer";
+    savePlayerProfile();
+    registerProfile();
+    setProfileStatus("Profile name saved.");
+    if(typeof chatName !== "undefined" && chatName) chatName.value = PLAYER_PROFILE.name;
+  });
+}
+if(copyPlayerId){
+  copyPlayerId.addEventListener("click", async ()=>{
+    try{
+      await navigator.clipboard.writeText(PLAYER_PROFILE.id);
+      setProfileStatus("Player ID copied.");
+    }catch{
+      setProfileStatus("Your ID: " + PLAYER_PROFILE.id);
+    }
+  });
+}
+if(refreshProfile){
+  refreshProfile.addEventListener("click", ()=>{
+    registerProfile();
+    refreshFriends();
+    setProfileStatus("Profile refreshed.");
+  });
+}
+if(addFriendBtn){
+  addFriendBtn.addEventListener("click", ()=>{
+    const target = (friendIdInput.value || "").trim().toUpperCase();
+    if(!target || target === PLAYER_PROFILE.id) return setProfileStatus("Type another player's ID.");
+    sendProfileMsg({t:"friend_request", from:PLAYER_PROFILE.id, target});
+    friendIdInput.value = "";
+  });
+}
+initProfileFriendSystem();
+
+
 
 /* =========================
    Core helpers + DOM
