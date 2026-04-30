@@ -1,16 +1,11 @@
 {
-  "name": "mini-racer-wide-rainbow-render",
+  "name": "mini-racer",
   "version": "1.0.0",
-  "description": "Mini Racer 3D PRO with wider track, multiplayer, first-500 rainbow car reward",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.3",
-    "ws": "^8.16.0"
-  },
-  "engines": {
-    "node": ">=18"
+    "express": "^4.18.2"
   }
 }

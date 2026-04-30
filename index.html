@@ -10,7 +10,7 @@
 
   #hud{
     position:fixed;left:12px;top:12px;z-index:20;color:#fff;
-    background:rgba(0,0,0,.35);backdrop-filter: blur(8px);
+    background:rgba(0,0,0,.35), -TRACK.width*0.75, TRACK.width*0.75);backdrop-filter: blur(8px);
     border:1px solid rgba(255,255,255,.12);
     padding:10px 12px;border-radius:16px;min-width:320px;
     pointer-events:none;
@@ -114,9 +114,6 @@
     box-shadow:0 0 0 4px rgba(0,229,255,.12);
   }
   .swatch{height:14px;border-radius:999px;border:1px solid rgba(255,255,255,.18)}
-  .swatch.rainbow{background:linear-gradient(90deg,#ff004c,#ff8a00,#ffee00,#00e676,#00bfff,#7c4dff,#ff00e5)!important;background-size:220% 100%;animation:rainbowShift 1.8s linear infinite}
-  .carTile.locked{opacity:.55;filter:saturate(.55)}
-  @keyframes rainbowShift{from{background-position:0% 50%}to{background-position:220% 50%}}
   .carName{font-weight:1000;font-size:12px}
   .carNote{opacity:.82;font-size:11px;line-height:1.2}
   .shopLine{
@@ -271,8 +268,8 @@
 
       <div class="card">
         <h4>Race Setup</h4>
-        <h4 style="margin-top:14px">Multiplayer / Render</h4>
-        <div class="miniTxt">Render-ready WebSocket multiplayer. The first 500 unique players who connect unlock the Rainbow Founder car automatically.</div>
+        <h4 style="margin-top:14px">Multiplayer (LAN)</h4>
+        <div class="miniTxt">Play with friends on the same Wi‑Fi. One PC runs the server.</div>
 
         <div class="shopLine">
           <div>
@@ -524,21 +521,17 @@ const TEAM_LIST = [
   {id:"williams", name:"Williams",  color:0x1d6aff, note:"Blue • solid"},
   {id:"haas",     name:"Haas",      color:0xe9eef7, note:"White • simple"},
   {id:"sauber",   name:"Sauber",    color:0x00ff7a, note:"Neon green • wild"},
-  {id:"rb",       name:"RB",        color:0x1c2a6a, note:"Blue • quick"},
-  {id:"rainbow",  name:"Rainbow Founder", color:0xffffff, note:"FREE for first 500 players", rainbow:true}
+  {id:"rb",       name:"RB",        color:0x1c2a6a, note:"Blue • quick"}
 ];
 
 const DEFAULT_SAVE = {
   cr: 0,
   teamId: "ferrari",
   upgrades: { speed:0, accel:0, grip:0 },
-  bestTime: null,
-  rainbowUnlocked: false,
-  playerToken: null
+  bestTime: null
 };
 
 let SAVE = loadSave();
-if(!SAVE.playerToken){ SAVE.playerToken = (crypto?.randomUUID?.() || (Date.now()+"-"+Math.random())).replace(/[^a-zA-Z0-9-]/g,""); saveNow("Player saved"); }
 function loadSave(){
   try{
     const raw=localStorage.getItem(SAVE_KEY);
@@ -547,20 +540,15 @@ function loadSave(){
     const s=structuredClone(DEFAULT_SAVE);
     if(typeof obj?.cr==="number") s.cr=obj.cr;
     if(typeof obj?.teamId==="string") s.teamId=obj.teamId;
-    if(typeof obj?.rainbowUnlocked==="boolean") s.rainbowUnlocked=obj.rainbowUnlocked;
-    if(typeof obj?.playerToken==="string") s.playerToken=obj.playerToken;
     if(obj?.upgrades){
       s.upgrades.speed = obj.upgrades.speed|0;
       s.upgrades.accel = obj.upgrades.accel|0;
       s.upgrades.grip  = obj.upgrades.grip|0;
     }
     if(typeof obj?.bestTime==="number") s.bestTime=obj.bestTime;
-    if(!s.playerToken) s.playerToken = (crypto?.randomUUID?.() || (Date.now()+"-"+Math.random())).replace(/[^a-zA-Z0-9-]/g,"");
     return s;
   }catch{
-    const s = structuredClone(DEFAULT_SAVE);
-    s.playerToken = (crypto?.randomUUID?.() || (Date.now()+"-"+Math.random())).replace(/[^a-zA-Z0-9-]/g,"");
-    return s;
+    return structuredClone(DEFAULT_SAVE);
   }
 }
 function saveNow(msgText="Saved!"){
@@ -570,9 +558,7 @@ function saveNow(msgText="Saved!"){
   toastMsg(msgText);
 }
 function resetSave(){
-  const keepToken = SAVE.playerToken || (crypto?.randomUUID?.() || (Date.now()+"-"+Math.random())).replace(/[^a-zA-Z0-9-]/g,"");
   SAVE = structuredClone(DEFAULT_SAVE);
-  SAVE.playerToken = keepToken;
   saveNow("Save reset");
   rebuildMenuUI();
 }
@@ -582,15 +568,13 @@ function rebuildMenuUI(){
   carsWrap.innerHTML="";
   for(const t of TEAM_LIST){
     const tile=document.createElement("div");
-    const locked = t.rainbow && !SAVE.rainbowUnlocked;
-    tile.className="carTile"+(t.id===SAVE.teamId?" active":"")+(locked?" locked":"");
+    tile.className="carTile"+(t.id===SAVE.teamId?" active":"");
     tile.innerHTML=`
-      <div class="swatch ${t.rainbow?"rainbow":""}" style="background:${t.rainbow?"linear-gradient(90deg,#ff004c,#ff8a00,#ffee00,#00e676,#00bfff,#7c4dff,#ff00e5)":"#"+t.color.toString(16).padStart(6,"0")}"></div>
+      <div class="swatch" style="background:#${t.color.toString(16).padStart(6,"0")}"></div>
       <div class="carName">${t.name}</div>
-      <div class="carNote">${locked?"Connect online to claim if you are in first 500":t.note}</div>
+      <div class="carNote">${t.note}</div>
     `;
     tile.addEventListener("pointerdown", ()=>{
-      if(locked) return toastMsg("Rainbow car unlocks for the first 500 online players");
       SAVE.teamId=t.id;
       saveNow("Car selected");
       rebuildMenuUI();
@@ -768,9 +752,9 @@ function mpSetPlayers(n){ if(mpPlayers) mpPlayers.textContent = String(n|0); }
 
 function mpDefaultServer(){
   try{
-    if(location.protocol === "https:") return "wss://" + location.host;
-    if(location.protocol === "http:") return "ws://" + location.host;
-    return "ws://localhost:8787";
+    const h = location.hostname;
+    if(!h || h==="localhost" || h==="127.0.0.1") return "ws://localhost:8787";
+    return "ws://" + h + ":8787";
   }catch{ return "ws://localhost:8787"; }
 }
 if(mpServer) mpServer.value = mpDefaultServer();
@@ -793,9 +777,7 @@ function mpClose(){
 
 function makeGhostCar(color=0xffffff){
   const g = new THREE.Group();
-  const isRainbow = color === -1;
-  const mat = new THREE.MeshStandardMaterial({color:isRainbow?0xffffff:color, roughness:0.30, metalness:0.25, transparent:true, opacity:0.72});
-  if(isRainbow){ g.userData.rainbow = true; g.userData.rainbowMat = mat; }
+  const mat = new THREE.MeshStandardMaterial({color, roughness:0.30, metalness:0.25, transparent:true, opacity:0.72});
   const dark = new THREE.MeshStandardMaterial({color:0x101318, roughness:0.9, metalness:0.08});
   const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.42, 5.5), mat);
   chassis.position.set(0,0.70,0.1);
@@ -849,7 +831,6 @@ function mpConnect(url){
 
     ws.addEventListener("open", ()=>{
       mp.connected = true;
-      try{ ws.send(JSON.stringify({t:"claimRainbow", token:SAVE.playerToken})); }catch{}
       mpSetHint("Connected. Create or Join a room.");
       resolve();
     });
@@ -860,21 +841,6 @@ function mpConnect(url){
       if(!msg || typeof msg.t!=="string") return;
 
       if(msg.t==="hello"){ mp.id = msg.id; return; }
-
-      if(msg.t==="rainbowReward"){
-        if(msg.unlocked){
-          SAVE.rainbowUnlocked = true;
-          if(SAVE.teamId !== "rainbow") SAVE.teamId = "rainbow";
-          saveNow("🌈 Rainbow car unlocked — first 500 reward!");
-          rebuildMenuUI();
-          applyCarPaint();
-        }else{
-          SAVE.rainbowUnlocked = false;
-          saveNow("Rainbow reward already claimed by first 500 players");
-          rebuildMenuUI();
-        }
-        return;
-      }
 
       if(msg.t==="created" || msg.t==="joined"){
         mp.room = msg.room;
@@ -1115,7 +1081,7 @@ scene.add(mountains);
 const track = new THREE.Group();
 scene.add(track);
 
-const TRACK = { width: 20.0, curb: 2.0, wallH: 1.5, wallW: 0.85, segments: 1100 }; // WIDER TRACK ADDED
+const TRACK = { width: 11.0, curb: 1.2, wallH: 1.5, wallW: 0.85, segments: 1100 };
 
 
 const TRACKS = [
@@ -1542,24 +1508,7 @@ const wBR = addWheel( 1.65,  2.05, false);
 // Paint apply
 function applyCarPaint(){
   const team = TEAM_LIST.find(t=>t.id===SAVE.teamId) || TEAM_LIST[0];
-  if(team.rainbow){
-    bodyPaint.color.setHSL((performance.now()*0.00012)%1, 1, 0.55);
-    bodyPaint.metalness = 0.55;
-    bodyPaint.roughness = 0.18;
-  }else{
-    bodyPaint.color.setHex(team.color);
-    bodyPaint.metalness = 0.35;
-    bodyPaint.roughness = 0.25;
-  }
-}
-function updateRainbowPaint(now){
-  const team = TEAM_LIST.find(t=>t.id===SAVE.teamId) || TEAM_LIST[0];
-  if(team.rainbow){ bodyPaint.color.setHSL((now*0.00028)%1, 1, 0.55); }
-  for(const p of mp.peers.values()){
-    if(p.mesh.userData.rainbow && p.mesh.userData.rainbowMat){
-      p.mesh.userData.rainbowMat.color.setHSL((now*0.00028 + 0.18)%1, 1, 0.55);
-    }
-  }
+  bodyPaint.color.setHex(team.color);
 }
 applyCarPaint();
 
@@ -2651,7 +2600,7 @@ function loop(now){
     if(mp.sendAcc >= 0.05 && state==="run"){
       mp.sendAcc = 0;
       const team = TEAM_LIST.find(t=>t.id===SAVE.teamId) || TEAM_LIST[0];
-      const s = { x: car.position.x, z: car.position.z, yaw: yaw, v: vel.length(), c: team.rainbow ? -1 : team.color };
+      const s = { x: car.position.x, z: car.position.z, yaw: yaw, v: vel.length(), c: team.color };
       try{ mp.ws?.send(JSON.stringify({t:"state", s})); }catch{}
     }
   }
@@ -2673,7 +2622,6 @@ function loop(now){
   }
 
   updateFX(dt);
-  updateRainbowPaint(now);
   renderer.render(scene, camera);
 }
 requestAnimationFrame(loop);
