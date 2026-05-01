@@ -15,27 +15,18 @@ app.get("/", (req, res) => {
 
 const chatMessages = [];
 const clients = new Set();
-
-// Public profile + friends system.
-// This is in-memory on Render. It stays while the server is running.
-// Browser keeps its own permanent Player ID in localStorage.
-const profiles = new Map(); // id -> {id,name,public,online,lastSeen,friends:Set,requests:Set,ws}
-const pendingRequests = new Map(); // targetId -> Set(fromId)
+const profiles = new Map();
+const pendingRequests = new Map();
 
 function cleanText(value, max) {
-  return String(value || "")
-    .replace(/[\u0000-\u001f\u007f]/g, "")
-    .trim()
-    .slice(0, max);
+  return String(value || "").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, max);
 }
 function send(ws, obj) {
   if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
 }
 function broadcast(obj) {
   const data = JSON.stringify(obj);
-  for (const ws of clients) {
-    if (ws.readyState === WebSocket.OPEN) ws.send(data);
-  }
+  for (const ws of clients) if (ws.readyState === WebSocket.OPEN) ws.send(data);
 }
 function onlineCount() {
   let n = 0;
@@ -45,16 +36,7 @@ function onlineCount() {
 function getProfile(id) {
   id = cleanText(id, 18).toUpperCase();
   if (!profiles.has(id)) {
-    profiles.set(id, {
-      id,
-      name: "Racer",
-      public: true,
-      online: false,
-      lastSeen: Date.now(),
-      friends: new Set(),
-      requests: new Set(),
-      ws: null
-    });
+    profiles.set(id, { id, name: "Racer", public: true, online: false, lastSeen: Date.now(), friends: new Set(), ws: null });
   }
   return profiles.get(id);
 }
@@ -66,9 +48,7 @@ function publicProfile(id) {
 function sendFriendsData(id) {
   const p = getProfile(id);
   const requestsSet = pendingRequests.get(p.id) || new Set();
-  const friends = [...p.friends].map(publicProfile);
-  const requests = [...requestsSet].map(publicProfile);
-  send(p.ws, { t: "friends_data", friends, requests, online: onlineCount() });
+  send(p.ws, { t: "friends_data", friends: [...p.friends].map(publicProfile), requests: [...requestsSet].map(publicProfile), online: onlineCount() });
 }
 function notifyProfile(id, message) {
   const p = profiles.get(id);
@@ -76,7 +56,74 @@ function notifyProfile(id, message) {
   if (p) sendFriendsData(id);
 }
 
-// Multiplayer room relay kept so existing multiplayer messages still work.
+const MAX_MATCH_PLAYERS = 5;
+const matches = new Map();
+let waitingMatchId = null;
+let matchCounter = 1;
+
+function newMatchId() { return "AUTO-" + String(matchCounter++).padStart(3, "0"); }
+function matchMembers(matchId) { return matches.get(matchId) || new Set(); }
+function broadcastMatch(matchId, obj) {
+  const set = matchMembers(matchId);
+  for (const p of set) send(p, obj);
+}
+function sendMatchPeers(matchId) {
+  const set = matchMembers(matchId);
+  const ids = [...set].map(p => p.id);
+  for (const p of set) send(p, { t: "peers", ids });
+}
+function leaveMatch(ws) {
+  if (!ws.matchId) return;
+  const matchId = ws.matchId;
+  const set = matches.get(matchId);
+  if (set) {
+    set.delete(ws);
+    for (const p of set) send(p, { t: "left", id: ws.id });
+    if (set.size === 0) {
+      matches.delete(matchId);
+      if (waitingMatchId === matchId) waitingMatchId = null;
+    } else {
+      sendMatchPeers(matchId);
+      if (set.size >= 2) {
+        if (waitingMatchId === matchId) waitingMatchId = null;
+        broadcastMatch(matchId, { t: "match_started", matchId, count: set.size });
+      } else {
+        waitingMatchId = matchId;
+        broadcastMatch(matchId, { t: "match_waiting", matchId, count: set.size });
+      }
+    }
+  }
+  ws.matchId = null;
+  ws.room = null;
+}
+function joinMatch(ws, matchId) {
+  const set = matchMembers(matchId);
+  if (set.size >= MAX_MATCH_PLAYERS) return false;
+  leaveMatch(ws);
+  set.add(ws);
+  matches.set(matchId, set);
+  ws.matchId = matchId;
+  ws.room = matchId;
+  sendMatchPeers(matchId);
+  if (set.size === 1) {
+    waitingMatchId = matchId;
+    send(ws, { t: "match_waiting", matchId, count: 1 });
+  } else {
+    if (waitingMatchId === matchId) waitingMatchId = null;
+    broadcastMatch(matchId, { t: "match_started", matchId, count: set.size });
+  }
+  return true;
+}
+function chooseAutoMatch() {
+  for (const [id, set] of matches) if (set.size >= 2 && set.size < MAX_MATCH_PLAYERS) return id;
+  if (waitingMatchId && matches.has(waitingMatchId) && matches.get(waitingMatchId).size < MAX_MATCH_PLAYERS) return waitingMatchId;
+  const id = newMatchId();
+  matches.set(id, new Set());
+  waitingMatchId = id;
+  return id;
+}
+
+// hidden old room support, kept so nothing breaks internally
 const rooms = new Map();
 function roomPin() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -85,7 +132,7 @@ function roomPin() {
   return pin;
 }
 function leaveRoom(ws) {
-  if (!ws.room) return;
+  if (!ws.room || ws.matchId === ws.room) return;
   const set = rooms.get(ws.room);
   if (set) {
     set.delete(ws);
@@ -99,6 +146,10 @@ function leaveRoom(ws) {
   ws.room = null;
 }
 function broadcastRoom(ws, obj) {
+  if (ws.matchId) {
+    broadcastMatch(ws.matchId, obj);
+    return;
+  }
   if (!ws.room) return;
   const set = rooms.get(ws.room);
   if (!set) return;
@@ -108,7 +159,6 @@ function broadcastRoom(ws, obj) {
 wss.on("connection", (ws) => {
   ws.id = Math.random().toString(36).slice(2, 10);
   clients.add(ws);
-
   send(ws, { t: "hello", id: ws.id });
   send(ws, { t: "chat_history", messages: chatMessages });
   broadcast({ t: "chat_online", count: onlineCount() });
@@ -118,18 +168,13 @@ wss.on("connection", (ws) => {
     try { msg = JSON.parse(raw.toString()); } catch { return; }
     if (!msg || typeof msg.t !== "string") return;
 
-    // Global chat
     if (msg.t === "chat") {
       const name = cleanText(msg.name, 14) || "Racer";
       const text = cleanText(msg.text, 140);
       if (!text) return send(ws, { t: "chat_error", message: "Empty message." });
-
       const lower = text.toLowerCase();
       const blocked = ["nigger", "nigga", "fuck your mom", "kill yourself"];
-      if (blocked.some(w => lower.includes(w))) {
-        return send(ws, { t: "chat_error", message: "Message blocked. Keep chat clean." });
-      }
-
+      if (blocked.some(w => lower.includes(w))) return send(ws, { t: "chat_error", message: "Message blocked. Keep chat clean." });
       const entry = { t: "chat", name, text, time: Date.now() };
       chatMessages.push({ name, text, time: entry.time });
       while (chatMessages.length > 50) chatMessages.shift();
@@ -137,7 +182,6 @@ wss.on("connection", (ws) => {
       return;
     }
 
-    // Player public profile register/update
     if (msg.t === "profile_register") {
       const id = cleanText(msg.id, 18).toUpperCase();
       if (!id) return;
@@ -148,14 +192,12 @@ wss.on("connection", (ws) => {
       p.lastSeen = Date.now();
       p.ws = ws;
       ws.playerId = id;
-
       if (Array.isArray(msg.friends)) {
         for (const fidRaw of msg.friends) {
           const fid = cleanText(fidRaw, 18).toUpperCase();
           if (fid && fid !== id) p.friends.add(fid);
         }
       }
-
       send(ws, { t: "profile_ok", id: p.id, name: p.name, online: onlineCount() });
       sendFriendsData(id);
       return;
@@ -172,12 +214,8 @@ wss.on("connection", (ws) => {
       const target = cleanText(msg.target, 18).toUpperCase();
       if (!from || !target || from === target) return;
       const fromP = getProfile(from);
-      const targetP = getProfile(target);
-
-      if (fromP.friends.has(target)) {
-        return send(ws, { t: "friend_notice", message: "Already friends." });
-      }
-
+      getProfile(target);
+      if (fromP.friends.has(target)) return send(ws, { t: "friend_notice", message: "Already friends." });
       if (!pendingRequests.has(target)) pendingRequests.set(target, new Set());
       pendingRequests.get(target).add(from);
       send(ws, { t: "friend_notice", message: "Friend request sent to " + target + "." });
@@ -187,17 +225,15 @@ wss.on("connection", (ws) => {
     }
 
     if (msg.t === "friend_accept") {
-      const from = cleanText(msg.from, 18).toUpperCase();     // accepter
-      const target = cleanText(msg.target, 18).toUpperCase(); // requester
+      const from = cleanText(msg.from, 18).toUpperCase();
+      const target = cleanText(msg.target, 18).toUpperCase();
       if (!from || !target) return;
       const reqs = pendingRequests.get(from);
       if (reqs) reqs.delete(target);
-
       const a = getProfile(from);
       const b = getProfile(target);
       a.friends.add(target);
       b.friends.add(from);
-
       notifyProfile(from, "Friend added.");
       notifyProfile(target, (a.name || from) + " accepted your friend request.");
       return;
@@ -224,8 +260,21 @@ wss.on("connection", (ws) => {
       return;
     }
 
-    // Existing multiplayer relay support
+    if (msg.t === "match_play") {
+      const matchId = chooseAutoMatch();
+      const ok = joinMatch(ws, matchId);
+      if (!ok) return send(ws, { t: "match_full" });
+      return;
+    }
+
+    if (msg.t === "match_leave") {
+      leaveMatch(ws);
+      send(ws, { t: "match_cancelled" });
+      return;
+    }
+
     if (msg.t === "create") {
+      leaveMatch(ws);
       leaveRoom(ws);
       let pin = roomPin();
       while (rooms.has(pin)) pin = roomPin();
@@ -237,6 +286,7 @@ wss.on("connection", (ws) => {
     }
 
     if (msg.t === "join") {
+      leaveMatch(ws);
       const pin = cleanText(msg.room, 8).toUpperCase();
       const set = rooms.get(pin);
       if (!set) return send(ws, { t: "error", message: "Room not found" });
@@ -261,6 +311,7 @@ wss.on("connection", (ws) => {
   });
 
   ws.on("close", () => {
+    leaveMatch(ws);
     leaveRoom(ws);
     if (ws.playerId && profiles.has(ws.playerId)) {
       const p = profiles.get(ws.playerId);

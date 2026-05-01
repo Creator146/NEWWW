@@ -440,6 +440,21 @@
   }
 }
 
+
+/* ===== AUTO MATCHMAKING FINAL ADD-ON (added, nothing deleted) ===== */
+#mpServer, #mpRoom, #mpCreate, #mpJoin, #mpLeave{display:none !important;}
+#autoMatchBox{
+  display:flex;flex-direction:column;gap:8px;margin-top:8px;padding:10px;
+  border-radius:14px;background:rgba(0,0,0,.24);border:1px solid rgba(255,255,255,.12);
+}
+#autoMatchBtn{
+  width:100%;border:1px solid rgba(0,229,255,.42);
+  background:linear-gradient(180deg, rgba(0,229,255,.55), rgba(0,229,255,.24));
+  color:#fff;border-radius:14px;padding:12px 14px;font-weight:1000;cursor:pointer;
+}
+#autoMatchBtn:active{transform:scale(.99)}
+#autoMatchState{font-size:12px;opacity:.9;line-height:1.3}
+#autoMatchState b{font-weight:1000}
 </style>
 </head>
 <body>
@@ -504,7 +519,14 @@
       <div class="card">
         <h4>Race Setup</h4>
         <h4 style="margin-top:14px">Multiplayer (LAN)</h4>
-        <div class="miniTxt">Play with friends on the same Wi‑Fi. One PC runs the server.</div>
+        <div class="miniTxt">Auto matchmaking: no room PIN. Click Multiplayer Play and wait for players.</div>
+        <!-- ===== AUTO MATCHMAKING FINAL ADD-ON (added, nothing deleted) ===== -->
+        <div id="autoMatchBox">
+          <button class="btn" id="autoMatchBtn" type="button">Multiplayer Play</button>
+          <div id="autoMatchState">
+            Press Multiplayer Play. It waits for a 2nd player, starts at 2 players, and lets others join until 5 players.
+          </div>
+        </div>
 
         <div class="shopLine">
           <div>
@@ -1112,6 +1134,7 @@ const buySpeed=$("buySpeed"), buyAccel=$("buyAccel"), buyGrip=$("buyGrip");
 const mpServer=$("mpServer"), mpRoom=$("mpRoom");
 const mpCreate=$("mpCreate"), mpJoin=$("mpJoin"), mpLeave=$("mpLeave");
 const mpHint=$("mpHint"), mpRoomLbl=$("mpRoomLbl"), mpPlayers=$("mpPlayers");
+const autoMatchBtn=$("autoMatchBtn"), autoMatchState=$("autoMatchState");
 
 const startLights=$("startLights"), startText=$("startText");
 const Ls=[$("L1"),$("L2"),$("L3"),$("L4"),$("L5")];
@@ -1373,6 +1396,9 @@ const mp = {
   ws: null,
   id: null,
   room: null,
+  matchId: null,
+  matchmaking: false,
+  matchStarted: false,
   peers: new Map(), // id -> {mesh, targetPos, targetYaw}
   sendAcc: 0,
   connected: false,
@@ -1384,6 +1410,10 @@ scene.add(mpGroup);
 function mpSetHint(t){ if(mpHint) mpHint.textContent = t; }
 function mpSetRoom(r){ if(mpRoomLbl) mpRoomLbl.textContent = r ? r : "—"; }
 function mpSetPlayers(n){ if(mpPlayers) mpPlayers.textContent = String(n|0); }
+function autoMatchText(t){
+  if(autoMatchState) autoMatchState.innerHTML = t;
+  mpSetHint(String(t).replace(/<[^>]*>/g, ""));
+}
 
 function mpDefaultServer(){
   try{
@@ -1405,7 +1435,11 @@ function mpClose(){
   mp.ws = null;
   mp.connected = false;
   mp.room = null;
+  mp.matchId = null;
+  mp.matchmaking = false;
+  mp.matchStarted = false;
   mpSetRoom(null);
+  if(autoMatchBtn) autoMatchBtn.textContent = "Multiplayer Play";
   mpSetHint("Not connected");
   mpResetPeers();
 }
@@ -1477,6 +1511,67 @@ function mpConnect(url){
 
       if(msg.t==="hello"){ mp.id = msg.id; return; }
 
+
+      if(msg.t==="match_waiting"){
+        mp.matchmaking = true;
+        mp.matchStarted = false;
+        mp.matchId = msg.matchId || null;
+        mp.room = mp.matchId;
+        mpSetRoom(mp.matchId || "AUTO");
+        mpSetPlayers(msg.count || 1);
+        if(autoMatchBtn) autoMatchBtn.textContent = "Cancel Matchmaking";
+        autoMatchText(`Waiting for 2nd player… <b>${msg.count || 1}/5</b>`);
+        return;
+      }
+
+      if(msg.t==="match_started"){
+        mp.matchmaking = false;
+        mp.matchStarted = true;
+        mp.matchId = msg.matchId || mp.matchId;
+        mp.room = mp.matchId;
+        mpSetRoom(mp.matchId || "AUTO");
+        mpSetPlayers(msg.count || 2);
+        if(autoMatchBtn) autoMatchBtn.textContent = "Leave Multiplayer";
+        autoMatchText(`Race started! Players: <b>${msg.count || 2}/5</b>. Late join is open until 5.`);
+        if(menu && menu.style.display !== "none"){
+          btnPlay.click();
+        }
+        return;
+      }
+
+      if(msg.t==="match_joined"){
+        mp.matchmaking = false;
+        mp.matchStarted = true;
+        mp.matchId = msg.matchId || mp.matchId;
+        mp.room = mp.matchId;
+        mpSetRoom(mp.matchId || "AUTO");
+        mpSetPlayers(msg.count || 1);
+        if(autoMatchBtn) autoMatchBtn.textContent = "Leave Multiplayer";
+        autoMatchText(`Joined active race. Players: <b>${msg.count || 1}/5</b>`);
+        if(menu && menu.style.display !== "none"){
+          btnPlay.click();
+        }
+        return;
+      }
+
+      if(msg.t==="match_full"){
+        autoMatchText("All races are full. Try again.");
+        if(autoMatchBtn) autoMatchBtn.textContent = "Multiplayer Play";
+        return;
+      }
+
+      if(msg.t==="match_cancelled"){
+        mp.matchmaking = false;
+        mp.matchStarted = false;
+        mp.matchId = null;
+        mp.room = null;
+        mpResetPeers();
+        mpSetRoom(null);
+        if(autoMatchBtn) autoMatchBtn.textContent = "Multiplayer Play";
+        autoMatchText("Matchmaking cancelled.");
+        return;
+      }
+
       if(msg.t==="created" || msg.t==="joined"){
         mp.room = msg.room;
         mpSetRoom(mp.room);
@@ -1543,9 +1638,33 @@ function mpLeaveRoom(){
   mpClose();
 }
 
+async function mpAutoPlay(){
+  const url = mpDefaultServer();
+  try{
+    await mpConnect(url);
+    if(mp.matchmaking || mp.matchStarted){
+      mp.ws?.send(JSON.stringify({t:"match_leave"}));
+      mp.matchmaking = false;
+      mp.matchStarted = false;
+      mp.matchId = null;
+      if(autoMatchBtn) autoMatchBtn.textContent = "Multiplayer Play";
+      autoMatchText("Left multiplayer.");
+      mpResetPeers();
+      return;
+    }
+    mp.ws?.send(JSON.stringify({t:"match_play"}));
+    if(autoMatchBtn) autoMatchBtn.textContent = "Cancel Matchmaking";
+    autoMatchText("Finding multiplayer race…");
+  }catch{
+    autoMatchText("Could not connect. Upload all 3 files to Render and use npm start.");
+  }
+}
+
+
 mpCreate?.addEventListener("click", (e)=>{ e.preventDefault(); mpCreateRoom(); });
 mpJoin?.addEventListener("click", (e)=>{ e.preventDefault(); mpJoinRoom(); });
 mpLeave?.addEventListener("click", (e)=>{ e.preventDefault(); mpLeaveRoom(); });
+autoMatchBtn?.addEventListener("click", (e)=>{ e.preventDefault(); mpAutoPlay(); });
 
 // Sky dome gradient (cheap but looks great)
 {
