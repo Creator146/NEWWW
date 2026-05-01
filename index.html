@@ -457,6 +457,7 @@
     <div class="chip">Best <b><span id="best">--</span></b></div>
     <div class="chip">View <b><span id="view">1</span></b></div>
     <div class="chip">CR <b><span id="cr">0</span></b></div>
+    <div class="chip">WIDE TRACK RESTORED</div>
   </div>
   <div class="muted">
     PC: <span class="kbd">A</span>=Left, <span class="kbd">D</span>=Right, <span class="kbd">W</span>=Go • <span class="kbd">Space</span>=brake • <span class="kbd">R</span>=reset • <span class="kbd">P</span>=pause • <span class="kbd">1</span>/<span class="kbd">2</span>=Camera<br/>
@@ -1715,7 +1716,8 @@ scene.add(mountains);
 const track = new THREE.Group();
 scene.add(track);
 
-const TRACK = { width: 11.0, curb: 1.2, wallH: 1.5, wallW: 0.85, segments: 1100 };
+// FULL FEATURES + WIDE TRACK FIX: bigger road, wider curbs, walls moved outward
+const TRACK = { width: 22.0, curb: 2.2, wallH: 1.5, wallW: 0.85, segments: 1100 };
 
 
 const TRACKS = [
